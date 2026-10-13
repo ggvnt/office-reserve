@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/server/db/pool";
-import type { PublicUser } from "@/models/user";
+import type { user, PublicUser } from "@/models/user";
 
 interface CreateUserInput {
   name: string;
@@ -23,4 +23,18 @@ export async function createUser(
   );
 
   return result.rows[0];
+}
+
+export async function findUserByEmail(
+  email: string
+): Promise<user | null> {
+  const result = await db.query<user>(
+    `SELECT id, name, email, password_hash,
+            role, is_active, created_at
+     FROM users
+     WHERE LOWER(email) = $1`,
+    [email.trim().toLowerCase()]
+  );
+
+  return result.rows[0] ?? null;
 }

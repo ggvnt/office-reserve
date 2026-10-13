@@ -1,6 +1,6 @@
 import "server-only";
-import { hashPassword } from "@/server/security/password";
-import { createUser } from "@/server/repositories/user-repository";
+import { hashPassword , verifyPassword } from "@/server/security/password";
+import { createUser ,findUserByEmail} from "@/server/repositories/user-repository";
 import type { PublicUser } from "@/models/user";
 
 export class RegistrationError extends Error {
@@ -83,4 +83,77 @@ export async function registerEmployee(
 
     throw error;
   }
+}
+
+export class LoginError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = "LoginError";
+  }
+}
+
+export async function loginUser(
+  input: unknown
+): Promise<PublicUser> {
+  if (
+    typeof input !== "object" ||
+    input === null ||
+    !("email" in input) ||
+    !("password" in input) ||
+    typeof input.email !== "string" ||
+    typeof input.password !== "string"
+  ) {
+    throw new LoginError(
+      "Email and password are required.",
+      400
+    );
+  }
+
+  const email = input.email.trim().toLowerCase();
+  const password = input.password;
+
+  if (
+    email.length > 255 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+    password.length < 12 ||
+    password.length > 128
+  ) {
+    throw new LoginError(
+      "Invalid email or password.",
+      401
+    );
+  }
+
+  const user = await findUserByEmail(email);
+
+  if (!user) {
+    throw new LoginError(
+      "Invalid email or password.",
+      401
+    );
+  }
+
+  const passwordMatches = await verifyPassword(
+    password,
+    user.password_hash
+  );
+
+  if (!passwordMatches || !user.is_active) {
+    throw new LoginError(
+      "Invalid email or password.",
+      401
+    );
+  }
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    is_active: user.is_active,
+    created_at: user.created_at,
+  };
 }
