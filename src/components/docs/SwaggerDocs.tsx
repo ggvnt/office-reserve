@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import "swagger-ui-react/swagger-ui.css";
-import { openApiSpec } from "../../docs/openapi";
+import { openApiSpec } from "@/docs/openapi";
 
 const SwaggerUI = dynamic(
   () => import("swagger-ui-react"),
