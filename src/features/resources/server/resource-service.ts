@@ -9,6 +9,11 @@ import {
   updateResource,
 } from "@/server/repositories/resource-repository";
 
+import {
+  findUpcomingResourceBookings,
+  type ResourceBooking,
+} from "@/server/repositories/reservation-repository";
+
 import { findCategoryById } from "@/server/repositories/category-repository";
 
 import { ResourceStatus, type Resource } from "@/models/resource";
@@ -237,4 +242,35 @@ export async function editResource(
   }
 
   return resource;
+}
+
+export interface ResourceAvailability {
+  resource: Resource;
+  bookings: ResourceBooking[];
+}
+
+export async function getResourceAvailability(
+  id: string
+): Promise<ResourceAvailability> {
+  await requireUser();
+
+  const uuidPattern =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  if (!uuidPattern.test(id)) {
+    throw new ResourceError("Invalid resource ID.", 400);
+  }
+
+  const resource = await findResourceById(id);
+
+  if (!resource) {
+    throw new ResourceError("Resource not found.", 404);
+  }
+
+  const bookings = await findUpcomingResourceBookings(id);
+
+  return {
+    resource,
+    bookings,
+  };
 }

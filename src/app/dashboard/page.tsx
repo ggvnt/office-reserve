@@ -42,6 +42,22 @@ export default async function DashboardPage() {
               Manage resources
             </Link>
           </div>
+          <div className="mt-6">
+            <Link
+              href="/reservations"
+              className="font-medium text-blue-600 underline"
+            >
+              Book a resource / My reservations
+            </Link>
+          </div>
+          <div className="mt-3">
+            <Link
+              href="/admin/approvals"
+              className="font-medium text-blue-600 underline"
+            >
+              Booking approvals
+            </Link>
+          </div>
         </>
       )}
     </main>

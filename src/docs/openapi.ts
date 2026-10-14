@@ -30,6 +30,7 @@ export const openApiSpec = {
     { name: "Authentication" },
     { name: "Categories" },
     { name: "Resources" },
+    { name: "Reservations" },
   ],
 
   paths: {
@@ -87,8 +88,7 @@ export const openApiSpec = {
       post: {
         tags: ["Authentication"],
         summary: "Log in and create a session",
-        description:
-          "A successful login sets an HttpOnly session cookie.",
+        description: "A successful login sets an HttpOnly session cookie.",
 
         requestBody: jsonRequest(
           {
@@ -275,12 +275,7 @@ export const openApiSpec = {
               example: true,
             },
           },
-          [
-            "category_id",
-            "name",
-            "location",
-            "requires_approval",
-          ],
+          ["category_id", "name", "location", "requires_approval"],
         ),
 
         responses: {
@@ -291,6 +286,66 @@ export const openApiSpec = {
           "401": { description: "Login required" },
           "403": { description: "Access denied" },
           "404": { description: "Category not found" },
+          "500": { description: "Server error" },
+        },
+      },
+    },
+
+    "/api/reservations": {
+      get: {
+        tags: ["Reservations"],
+        summary: "List my reservations — Login required",
+
+        responses: {
+          "200": { description: "Your reservations retrieved" },
+          "401": { description: "Login required" },
+          "500": { description: "Server error" },
+        },
+      },
+
+      post: {
+        tags: ["Reservations"],
+        summary: "Create a reservation — Login required",
+        description:
+          "Approval-required resources create PENDING reservations. Other resources create CONFIRMED reservations. Times must include a timezone.",
+
+        requestBody: jsonRequest(
+          {
+            resource_id: {
+              type: "string",
+              format: "uuid",
+              description:
+                "Copy an ACTIVE resource ID from GET /api/resources.",
+            },
+            purpose: {
+              type: "string",
+              minLength: 3,
+              maxLength: 1000,
+              example: "Team planning meeting",
+            },
+            start_time: {
+              type: "string",
+              format: "date-time",
+              example: "2026-10-15T10:00:00+05:30",
+            },
+            end_time: {
+              type: "string",
+              format: "date-time",
+              example: "2026-10-15T11:00:00+05:30",
+            },
+          },
+          ["resource_id", "purpose", "start_time", "end_time"],
+        ),
+
+        responses: {
+          "201": { description: "Reservation created" },
+          "400": { description: "Invalid input or booking times" },
+          "401": { description: "Login required" },
+          "403": { description: "Request origin not allowed" },
+          "404": { description: "Resource not found" },
+          "409": {
+            description: "Resource unavailable or booking conflict",
+          },
           "500": { description: "Server error" },
         },
       },
@@ -347,13 +402,7 @@ export const openApiSpec = {
               example: true,
             },
           },
-          [
-            "category_id",
-            "name",
-            "location",
-            "status",
-            "requires_approval",
-          ],
+          ["category_id", "name", "location", "status", "requires_approval"],
         ),
 
         responses: {
@@ -362,6 +411,99 @@ export const openApiSpec = {
           "401": { description: "Login required" },
           "403": { description: "Access denied" },
           "404": { description: "Resource or category not found" },
+          "500": { description: "Server error" },
+        },
+      },
+    },
+    "/api/reservations/{id}/cancel": {
+      post: {
+        tags: ["Reservations"],
+        summary: "Cancel my upcoming reservation",
+        description:
+          "Only your own future PENDING or CONFIRMED reservation can be cancelled.",
+
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: {
+              type: "string",
+              format: "uuid",
+            },
+          },
+        ],
+
+        responses: {
+          "200": { description: "Reservation cancelled" },
+          "400": { description: "Invalid reservation ID" },
+          "401": { description: "Login required" },
+          "403": { description: "Request origin not allowed" },
+          "409": {
+            description: "Reservation not found or cannot be cancelled",
+          },
+          "500": { description: "Server error" },
+        },
+      },
+    },
+    "/api/reservations/pending": {
+      get: {
+        tags: ["Reservations"],
+        summary: "List pending reservations — Admin only",
+
+        responses: {
+          "200": { description: "Pending reservations retrieved" },
+          "401": { description: "Login required" },
+          "403": { description: "Admin access required" },
+          "500": { description: "Server error" },
+        },
+      },
+    },
+
+    "/api/reservations/{id}/review": {
+      post: {
+        tags: ["Reservations"],
+        summary: "Approve or reject a reservation — Admin only",
+
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: {
+              type: "string",
+              format: "uuid",
+            },
+          },
+        ],
+
+        requestBody: jsonRequest(
+          {
+            decision: {
+              type: "string",
+              enum: ["APPROVED", "REJECTED"],
+              example: "APPROVED",
+            },
+            comment: {
+              type: "string",
+              nullable: true,
+              maxLength: 1000,
+              example: "Approved for the team meeting",
+            },
+          },
+          ["decision"],
+        ),
+
+        responses: {
+          "200": { description: "Reservation reviewed" },
+          "400": { description: "Invalid input" },
+          "401": { description: "Login required" },
+          "403": { description: "Access denied" },
+          "404": { description: "Reservation or resource not found" },
+          "409": {
+            description:
+              "Reservation is no longer pending, resource is unavailable, booking has started, or time conflicts",
+          },
           "500": { description: "Server error" },
         },
       },
