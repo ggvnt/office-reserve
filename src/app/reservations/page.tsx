@@ -3,14 +3,13 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/server/security/session";
 import { ResourceStatus } from "@/models/resource";
+import { UserRole } from "@/models/user";
 
 import { listResources } from "@/features/resources/server/resource-service";
 import { listMyReservations } from "@/features/reservations/server/reservation-service";
 
 import CreateReservationForm from "@/features/reservations/components/CreateReservationForm";
-// import { ReservationStatus } from "@/models/reservation";
 import CancelReservationButton from "@/features/reservations/components/CancelReservationButton";
-import { ReservationStatus } from "@/models/reservation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +21,13 @@ function formatDate(value: Date): string {
     timeStyle: "short",
   }).format(value);
 }
+
+const statusStyles: Record<string, string> = {
+  PENDING: "bg-amber-50 text-amber-700",
+  CONFIRMED: "bg-emerald-50 text-emerald-700",
+  REJECTED: "bg-red-50 text-red-700",
+  CANCELLED: "bg-slate-100 text-slate-600",
+};
 
 export default async function ReservationsPage() {
   const user = await getCurrentUser();
@@ -45,95 +51,146 @@ export default async function ReservationsPage() {
     }));
 
   const resourceNames = new Map(
-    resources.map((resource) => [resource.id, resource.name]),
+    resources.map((resource) => [resource.id, resource.name])
   );
 
+  const navLink =
+    "rounded-lg px-4 py-3 text-sm text-slate-300 hover:bg-white/10 hover:text-white";
+
   return (
-    <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header>
-          <Link href="/dashboard" className="text-sm text-blue-600 underline">
-            Back to dashboard
+    <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
+      <aside className="bg-slate-950 p-6 text-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0">
+        <Link href="/dashboard" className="text-xl font-bold">
+          Office<span className="text-blue-400">Reserve</span>
+        </Link>
+
+        <nav className="mt-8 flex flex-col gap-2">
+          <Link href="/dashboard" className={navLink}>
+            Overview
           </Link>
 
-          <h1 className="mt-3 text-3xl font-bold">Reservations</h1>
-        </header>
+          <Link href="/resources" className={navLink}>
+            Browse resources
+          </Link>
 
-        <CreateReservationForm resources={activeResources} />
+          <Link
+            href="/reservations"
+            aria-current="page"
+            className="rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium"
+          >
+            My reservations
+          </Link>
 
-        <section className="rounded-xl bg-white p-6 shadow">
-          <h2 className="text-xl font-semibold">My reservations</h2>
+          {user.role === UserRole.ADMIN && (
+            <>
+              <p className="mt-5 px-4 text-xs uppercase tracking-wider text-slate-400">
+                Administration
+              </p>
 
-          <p className="mt-2 text-sm text-slate-600">
-            Booking times below are shown in Sri Lanka time.
-          </p>
+              <Link href="/admin/categories" className={navLink}>
+                Categories
+              </Link>
 
-          {reservations.length === 0 ? (
-            <p className="mt-4 text-slate-600">You have no reservations yet.</p>
-          ) : (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th scope="col" className="p-3">
-                      Resource
-                    </th>
-                    <th scope="col" className="p-3">
-                      Purpose
-                    </th>
-                    <th scope="col" className="p-3">
-                      Start
-                    </th>
-                    <th scope="col" className="p-3">
-                      End
-                    </th>
-                    <th scope="col" className="p-3">
-                      Status
-                    </th>
-                    <th scope="col" className="p-3">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
+              <Link href="/admin/resources" className={navLink}>
+                Resources
+              </Link>
 
-                <tbody>
-                  {reservations.map((reservation) => (
-                    <tr
-                      key={reservation.id}
-                      className="border-b border-slate-100"
-                    >
-                      <td className="p-3 font-medium">
-                        {resourceNames.get(reservation.resource_id) ?? "—"}
-                      </td>
-
-                      <td className="p-3">{reservation.purpose}</td>
-
-                      <td className="p-3">
-                        {formatDate(reservation.start_time)}
-                      </td>
-
-                      <td className="p-3">
-                        {formatDate(reservation.end_time)}
-                      </td>
-
-                      <td className="p-3">{reservation.status}</td>
-                      <td className="p-3">
-                        {reservation.can_cancel ? (
-                          <CancelReservationButton
-                            reservationId={reservation.id}
-                          />
-                        ) : (
-                          <span className="text-slate-500">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              <Link href="/admin/approvals" className={navLink}>
+                Booking approvals
+              </Link>
+            </>
           )}
-        </section>
-      </div>
-    </main>
+        </nav>
+      </aside>
+
+      <main className="min-w-0 flex-1 p-6 lg:p-10">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <header>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Reservations
+            </h1>
+            <p className="mt-2 text-sm text-slate-500">
+              Book a resource and manage your reservations.
+            </p>
+          </header>
+
+          <CreateReservationForm resources={activeResources} />
+
+          <section className="rounded-xl border border-slate-200 bg-white p-6">
+            <h2 className="text-xl font-semibold">
+              My reservations
+            </h2>
+
+
+            {reservations.length === 0 ? (
+              <p className="mt-6 rounded-lg bg-slate-50 p-6 text-center text-sm text-slate-500">
+                No reservations yet. Create one using the form above.
+              </p>
+            ) : (
+              <div className="mt-5 overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th scope="col" className="p-3">Resource</th>
+                      <th scope="col" className="p-3">Purpose</th>
+                      <th scope="col" className="p-3">Start</th>
+                      <th scope="col" className="p-3">End</th>
+                      <th scope="col" className="p-3">Status</th>
+                      <th scope="col" className="p-3">Actions</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {reservations.map((reservation) => (
+                      <tr
+                        key={reservation.id}
+                        className="border-t border-slate-100 hover:bg-slate-50"
+                      >
+                        <td className="p-3 font-medium">
+                          {resourceNames.get(reservation.resource_id) ?? "—"}
+                        </td>
+
+                        <td className="p-3">
+                          {reservation.purpose}
+                        </td>
+
+                        <td className="whitespace-nowrap p-3">
+                          {formatDate(reservation.start_time)}
+                        </td>
+
+                        <td className="whitespace-nowrap p-3">
+                          {formatDate(reservation.end_time)}
+                        </td>
+
+                        <td className="p-3">
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                              statusStyles[reservation.status] ??
+                              "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {reservation.status}
+                          </span>
+                        </td>
+
+                        <td className="p-3">
+                          {reservation.can_cancel ? (
+                            <CancelReservationButton
+                              reservationId={reservation.id}
+                            />
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+    </div>
   );
 }

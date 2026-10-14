@@ -4,10 +4,7 @@ import { redirect } from "next/navigation";
 import { UserRole } from "@/models/user";
 import { getCurrentUser } from "@/server/security/session";
 
-import {
-  listPendingReservations,
-} from "@/features/reservations/server/reservation-service";
-
+import { listPendingReservations } from "@/features/reservations/server/reservation-service";
 import ReviewReservationForm from "@/features/reservations/components/ReviewReservationForm";
 
 export const runtime = "nodejs";
@@ -34,91 +31,143 @@ export default async function ApprovalsPage() {
 
   const reservations = await listPendingReservations();
 
+  const navLink =
+    "rounded-lg px-4 py-3 text-sm text-slate-300 hover:bg-white/10 hover:text-white";
+
   return (
-    <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header>
-          <Link
-            href="/dashboard"
-            className="text-sm text-blue-600 underline"
-          >
-            Back to dashboard
+    <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
+      <aside className="bg-slate-950 p-6 text-white lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0">
+        <Link href="/dashboard" className="text-xl font-bold">
+          Office<span className="text-blue-400">Reserve</span>
+        </Link>
+
+        <nav
+          aria-label="Workspace navigation"
+          className="mt-8 flex flex-col gap-2"
+        >
+          <Link href="/dashboard" className={navLink}>
+            Overview
           </Link>
 
-          <h1 className="mt-3 text-3xl font-bold">
-            Booking approvals
-          </h1>
+          <Link href="/resources" className={navLink}>
+            Browse resources
+          </Link>
 
-          <p className="mt-2 text-sm text-slate-600">
-            Times are shown in Sri Lanka time.
+          <Link href="/reservations" className={navLink}>
+            My reservations
+          </Link>
+
+          <p className="mt-5 px-4 text-xs uppercase tracking-wider text-slate-400">
+            Administration
           </p>
-        </header>
 
-        <section className="rounded-xl bg-white p-6 shadow">
-          <h2 className="text-xl font-semibold">
-            Pending requests
-          </h2>
+          <Link href="/admin/categories" className={navLink}>
+            Categories
+          </Link>
 
-          {reservations.length === 0 ? (
-            <p className="mt-4 text-slate-600">
-              No pending requests.
+          <Link href="/admin/resources" className={navLink}>
+            Resources
+          </Link>
+
+          <Link
+            href="/admin/approvals"
+            aria-current="page"
+            className="rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium"
+          >
+            Booking approvals
+          </Link>
+        </nav>
+      </aside>
+
+      <main className="min-w-0 flex-1 p-6 lg:p-10">
+        <div className="mx-auto max-w-7xl space-y-6">
+          <header>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Booking approvals
+            </h1>
+
+            <p className="mt-2 text-sm text-slate-500">
+              Review booking requests. Times are shown in Sri Lanka time.
             </p>
-          ) : (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th scope="col" className="p-3">Resource</th>
-                    <th scope="col" className="p-3">Employee</th>
-                    <th scope="col" className="p-3">Purpose</th>
-                    <th scope="col" className="p-3">Start</th>
-                    <th scope="col" className="p-3">End</th>
-                    <th scope="col" className="p-3">Review</th>
-                  </tr>
-                </thead>
+          </header>
 
-                <tbody>
-                  {reservations.map((reservation) => (
-                    <tr
-                      key={reservation.id}
-                      className="border-b border-slate-100"
-                    >
-                      <td className="p-3 align-top font-medium">
-                        {reservation.resource_name}
-                      </td>
+          <section className="rounded-xl border border-slate-200 bg-white p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-xl font-semibold">
+                Pending requests
+              </h2>
 
-                      <td className="p-3 align-top">
-                        <p>{reservation.booked_by_name}</p>
-                        <p className="mt-1 text-slate-500">
-                          {reservation.booked_by_email}
-                        </p>
-                      </td>
-
-                      <td className="p-3 align-top">
-                        {reservation.purpose}
-                      </td>
-
-                      <td className="p-3 align-top">
-                        {formatDate(reservation.start_time)}
-                      </td>
-
-                      <td className="p-3 align-top">
-                        {formatDate(reservation.end_time)}
-                      </td>
-
-                      <td className="p-3 align-top">
-                        <ReviewReservationForm
-                          reservationId={reservation.id}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                {reservations.length} pending
+              </span>
             </div>
-          )}
-        </section>
-      </div>
-    </main>
+
+            {reservations.length === 0 ? (
+              <div className="mt-6 rounded-lg bg-slate-50 p-8 text-center">
+                <p className="font-medium">All caught up</p>
+                <p className="mt-2 text-sm text-slate-500">
+                  No pending booking requests to review.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th scope="col" className="p-3">Resource</th>
+                      <th scope="col" className="p-3">Requested by</th>
+                      <th scope="col" className="p-3">Purpose</th>
+                      <th scope="col" className="p-3">Start</th>
+                      <th scope="col" className="p-3">End</th>
+                      <th scope="col" className="p-3">Review</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {reservations.map((reservation) => (
+                      <tr
+                        key={reservation.id}
+                        className="border-t border-slate-100 hover:bg-slate-50"
+                      >
+                        <td className="p-3 align-top font-medium">
+                          {reservation.resource_name}
+                        </td>
+
+                        <td className="p-3 align-top">
+                          <p className="font-medium">
+                            {reservation.booked_by_name}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {reservation.booked_by_email}
+                          </p>
+                        </td>
+
+                        <td className="p-3 align-top text-slate-600">
+                          {reservation.purpose}
+                        </td>
+
+                        <td className="whitespace-nowrap p-3 align-top">
+                          {formatDate(reservation.start_time)}
+                        </td>
+
+                        <td className="whitespace-nowrap p-3 align-top">
+                          {formatDate(reservation.end_time)}
+                        </td>
+
+                        <td className="p-3 align-top">
+                          <ReviewReservationForm
+                            reservationId={reservation.id}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+    </div>
   );
 }
