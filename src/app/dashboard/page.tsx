@@ -1,10 +1,12 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+
+import { UserRole } from "@/models/user";
 import { getCurrentUser } from "@/server/security/session";
 import LogoutButton from "@/features/auth/components/LogoutButton";
-import Link from "next/link";
-import { UserRole } from "@/models/user";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -14,52 +16,76 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-8 text-slate-900">
-      <section className="mx-auto max-w-4xl rounded-xl bg-white p-8 shadow">
-        <div className="mt-6">
-          <LogoutButton />
-        </div>
-        <h1 className="text-3xl font-bold">OfficeReserve Dashboard</h1>
+    <main className="min-h-screen bg-slate-100 p-6 text-slate-900">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <header className="rounded-xl bg-white p-6 shadow">
+          <h1 className="text-3xl font-bold">
+            OfficeReserve Dashboard
+          </h1>
 
-        <p className="mt-4">Welcome, {user.name}!</p>
-        <p className="mt-2 text-slate-600">Role: {user.role}</p>
-      </section>
-      {user.role === UserRole.ADMIN && (
-        <>
-          <div className="mt-6">
+          <p className="mt-3">Welcome, {user.name}!</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Role: {user.role}
+          </p>
+        </header>
+
+        {/* Admin සහ Employee දෙදෙනාටම */}
+        <section className="rounded-xl bg-white p-6 shadow">
+          <h2 className="text-xl font-semibold">
+            Bookings
+          </h2>
+
+          <nav className="mt-4 flex flex-col gap-3">
             <Link
-              href="/admin/categories"
-              className="font-medium text-blue-600 underline"
+              href="/resources"
+              className="text-blue-600 underline"
             >
-              Manage categories
+              Browse resources and booked times
             </Link>
-          </div>
-          <div className="mt-6">
-            <Link
-              href="/admin/resources"
-              className="font-medium text-blue-600 underline"
-            >
-              Manage resources
-            </Link>
-          </div>
-          <div className="mt-6">
+
             <Link
               href="/reservations"
-              className="font-medium text-blue-600 underline"
+              className="text-blue-600 underline"
             >
               Book a resource / My reservations
             </Link>
-          </div>
-          <div className="mt-3">
-            <Link
-              href="/admin/approvals"
-              className="font-medium text-blue-600 underline"
-            >
-              Booking approvals
-            </Link>
-          </div>
-        </>
-      )}
+          </nav>
+        </section>
+
+        {/* Adminට පමණයි */}
+        {user.role === UserRole.ADMIN && (
+          <section className="rounded-xl bg-white p-6 shadow">
+            <h2 className="text-xl font-semibold">
+              Administration
+            </h2>
+
+            <nav className="mt-4 flex flex-col gap-3">
+              <Link
+                href="/admin/categories"
+                className="text-blue-600 underline"
+              >
+                Manage categories
+              </Link>
+
+              <Link
+                href="/admin/resources"
+                className="text-blue-600 underline"
+              >
+                Manage resources
+              </Link>
+
+              <Link
+                href="/admin/approvals"
+                className="text-blue-600 underline"
+              >
+                Booking approvals
+              </Link>
+            </nav>
+          </section>
+        )}
+
+        <LogoutButton />
+      </div>
     </main>
   );
 }

@@ -351,6 +351,31 @@ export const openApiSpec = {
       },
     },
 
+    get: {
+      tags: ["Resources"],
+      summary: "Get resource details and booked times — Login required",
+
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: {
+            type: "string",
+            format: "uuid",
+          },
+        },
+      ],
+
+      responses: {
+        "200": { description: "Resource and confirmed booking times" },
+        "400": { description: "Invalid resource ID" },
+        "401": { description: "Login required" },
+        "404": { description: "Resource not found" },
+        "500": { description: "Server error" },
+      },
+    },
+
     "/api/resources/{id}": {
       put: {
         tags: ["Resources"],

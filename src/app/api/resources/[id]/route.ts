@@ -1,6 +1,7 @@
 import {
   editResource,
   ResourceError,
+  getResourceAvailability,
 } from "@/features/resources/server/resource-service";
 
 import {
@@ -8,6 +9,7 @@ import {
 } from "@/server/security/permissions";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function PUT(
   request: Request,
@@ -56,6 +58,38 @@ export async function PUT(
 
     return Response.json(
       { message: "Unable to update resource." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    const availability = await getResourceAvailability(id);
+
+    return Response.json(
+      availability,
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  } catch (error) {
+    if (
+      error instanceof ResourceError ||
+      error instanceof AuthorizationError
+    ) {
+      return Response.json(
+        { message: error.message },
+        { status: error.status }
+      );
+    }
+
+    console.error("Resource availability request failed:", error);
+
+    return Response.json(
+      { message: "Unable to load resource availability." },
       { status: 500 }
     );
   }
