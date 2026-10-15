@@ -38,7 +38,7 @@ export default function EditResourceForm({
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Active categories සහ දැනට අයත් category එක පෙන්වනවා.
+  // Active categories and the resource's current category (even if inactive) are available for selection.
   const availableCategories = categories.filter(
     (category) =>
       category.is_active || category.id === resource.category_id

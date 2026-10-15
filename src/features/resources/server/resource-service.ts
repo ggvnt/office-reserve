@@ -219,8 +219,7 @@ export async function editResource(
     throw new ResourceError("Category not found.", 404);
   }
 
-  // දැනට අයත් inactive category එක තබාගෙන edit කළ හැකියි.
-  // වෙනත් category එකකට මාරු කරනවා නම් එය active විය යුතුයි.
+  // If the category is being changed, ensure the new category is active.
   if (category.id !== existingResource.category_id && !category.is_active) {
     throw new ResourceError(
       "Select an active category when changing categories.",

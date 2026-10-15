@@ -323,7 +323,7 @@ export async function reviewReservation(
       throw new ReservationError("Reservation not found.", 404);
     }
 
-    // Booking creation සහ review දෙකම resource එක මුලින් lock කරනවා.
+    // Lock the resource to prevent concurrent modifications.
     const resourceResult = await client.query<{
       id: string;
       status: ResourceStatus;
